@@ -1,7 +1,8 @@
 import type { FC } from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
+import { trackEvent } from '../services/trackingService';
 import { PropertyCard } from '../components/PropertyCard';
 import { FilterBar } from '../components/FilterBar';
 import { InteractiveMap } from '../components/InteractiveMap';
@@ -42,6 +43,17 @@ export const TenantView: FC = () => {
   // Active property details
   const activeProperty = properties.find((p) => p.id === activePropertyId);
 
+  // Track room_profile_viewed
+  useEffect(() => {
+    if (activePropertyId) {
+      trackEvent({
+        eventName: 'room_profile_viewed',
+        userId: user?.id,
+        propertyId: activePropertyId
+      });
+    }
+  }, [activePropertyId, user?.id]);
+
   // Fast filter triggers
   const triggerQuickFilter = (targetName: string) => {
     setFilters(prev => ({
@@ -51,6 +63,12 @@ export const TenantView: FC = () => {
       district: 'all',
       propertyType: 'all'
     }));
+
+    trackEvent({
+      eventName: 'filter_applied',
+      userId: user?.id,
+      metadata: { action: 'quick_filter', targetName }
+    });
 
     // Smooth scroll to results
     const element = document.getElementById('catalogo');
@@ -72,6 +90,16 @@ export const TenantView: FC = () => {
     const formattedPhone = phone.replace('+', '').replace(/\s/g, '');
     const message = `Hola, vi su anuncio "${title}" en la plataforma ALQUILAGO (S/. ${price}/mes) y estoy interesado(a) en obtener más detalles y coordinar una visita. ¡Muchas gracias!`;
     return `https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(message)}`;
+  };
+
+  const handleContactClick = () => {
+    if (activePropertyId) {
+      trackEvent({
+        eventName: 'first_contact_initiated',
+        userId: user?.id,
+        propertyId: activePropertyId
+      });
+    }
   };
 
   // Handle favorite toggle with auth check
@@ -447,6 +475,7 @@ export const TenantView: FC = () => {
 
                 {/* WHATSAPP ACTION BUTTON */}
                 <a
+                  onClick={handleContactClick}
                   href={getWhatsAppLink(activeProperty.phone, activeProperty.title, activeProperty.price)}
                   target="_blank"
                   rel="noopener noreferrer"

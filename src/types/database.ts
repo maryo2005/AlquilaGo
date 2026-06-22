@@ -137,6 +137,47 @@ export interface Database {
           }
         ];
       };
+      tracking_events: {
+        Row: {
+          id: string;
+          created_at: string;
+          session_id: string;
+          user_id: string | null;
+          event_name: string;
+          property_id: string | null;
+          source_channel: string;
+          metadata: Record<string, any>;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          session_id: string;
+          user_id?: string | null;
+          event_name: string;
+          property_id?: string | null;
+          source_channel?: string;
+          metadata?: Record<string, any>;
+        };
+        Update: {
+          id?: string;
+          created_at?: string;
+          session_id?: string;
+          user_id?: string | null;
+          event_name?: string;
+          property_id?: string | null;
+          source_channel?: string;
+          metadata?: Record<string, any>;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tracking_events_property_id_fkey';
+            columns: ['property_id'];
+            isOneToOne: false;
+            referencedRelation: 'properties';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

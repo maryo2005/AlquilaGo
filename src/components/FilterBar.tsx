@@ -1,11 +1,14 @@
 import type { FC, ChangeEvent } from 'react';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
+import { trackEvent } from '../services/trackingService';
 import { trujilloDistricts, trujilloTargets } from '../data/seedData';
 import { Search, RotateCcw } from 'lucide-react';
 import type { ContractType } from '../types/property';
 
 export const FilterBar: FC = () => {
   const { filters, setFilters, resetFilters, filteredProperties, properties } = useApp();
+  const { user } = useAuth();
 
   const handleTextChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFilters((prev) => ({ ...prev, searchQuery: e.target.value }));
@@ -17,6 +20,11 @@ export const FilterBar: FC = () => {
     value: string
   ) => {
     setFilters((prev) => ({ ...prev, [field]: value }));
+    trackEvent({
+      eventName: 'filter_applied',
+      userId: user?.id,
+      metadata: { field, value }
+    });
   };
 
   const handlePriceChange = (field: 'minPrice' | 'maxPrice', value: string) => {
@@ -25,10 +33,16 @@ export const FilterBar: FC = () => {
   };
 
   const toggleContractType = (type: ContractType) => {
+    const newType = filters.contractType === type ? 'all' : type;
     setFilters((prev) => ({
       ...prev,
-      contractType: prev.contractType === type ? 'all' : type,
+      contractType: newType,
     }));
+    trackEvent({
+      eventName: 'filter_applied',
+      userId: user?.id,
+      metadata: { field: 'contractType', value: newType }
+    });
   };
 
   return (

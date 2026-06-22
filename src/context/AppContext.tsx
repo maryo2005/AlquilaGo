@@ -4,6 +4,7 @@ import type { Property, FilterState, UserRole } from '../types/property';
 import { useAuth } from './AuthContext';
 import { fetchProperties as fetchPropertiesService, createProperty as createPropertyService, deleteProperty as deletePropertyService } from '../services/propertyService';
 import { fetchFavorites as fetchFavoritesService, addFavorite, removeFavorite } from '../services/favoriteService';
+import { trackEvent } from '../services/trackingService';
 
 interface AppContextType {
   properties: Property[];
@@ -134,6 +135,11 @@ export const AppProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const resetFilters = () => {
     setFilters(defaultFilters);
+    trackEvent({
+      eventName: 'filter_applied',
+      userId: user?.id,
+      metadata: { action: 'reset' }
+    });
   };
 
   const addProperty = async (propertyData: Omit<Property, 'id' | 'views' | 'createdAt' | 'ownerId'>) => {
