@@ -3,13 +3,15 @@ import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { AuthModal } from './AuthModal';
-import { Home, LayoutDashboard, PlusCircle, Menu, X, Users, Briefcase, LogIn, LogOut } from 'lucide-react';
+import { TrustProfileModal } from './TrustProfileModal';
+import { Home, LayoutDashboard, PlusCircle, Menu, X, Users, Briefcase, LogIn, LogOut, Bell } from 'lucide-react';
 
 export const Navbar: FC = () => {
-  const { role, setRole, favorites } = useApp();
+  const { role, setRole, favorites, pendingSurveys } = useApp();
   const { user, signOut, loading: authLoading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   const handleRoleToggle = () => {
     setRole(role === 'tenant' ? 'owner' : 'tenant');
@@ -103,13 +105,30 @@ export const Navbar: FC = () => {
               <div className="h-9 w-9 animate-pulse rounded-full bg-gray-200" />
             ) : user ? (
               <div className="flex items-center space-x-2 border-l border-gray-200 pl-4">
-                <div className="h-9 w-9 flex items-center justify-center rounded-full border-2 border-blue-500 bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-sm text-xs font-bold">
+                {/* Notification bell for pending surveys */}
+                {pendingSurveys.length > 0 && (
+                  <div className="relative">
+                    <Bell className="h-4.5 w-4.5 text-amber-500 animate-bounce" style={{ animationDuration: '2s' }} />
+                    <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-rose-500 text-[8px] font-bold text-white">
+                      {pendingSurveys.length}
+                    </span>
+                  </div>
+                )}
+                <button
+                  onClick={() => setShowProfileModal(true)}
+                  className="h-9 w-9 flex items-center justify-center rounded-full border-2 border-blue-500 bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-sm text-xs font-bold transition hover:scale-105 active:scale-95 cursor-pointer"
+                  title="Ver mi Perfil de Confianza"
+                >
                   {user.email?.charAt(0).toUpperCase() || 'U'}
-                </div>
+                </button>
                 <div className="text-left">
-                  <p className="text-xs font-bold text-gray-800 max-w-[120px] truncate">
+                  <button
+                    onClick={() => setShowProfileModal(true)}
+                    className="text-xs font-bold text-gray-800 max-w-[120px] truncate hover:text-blue-600 transition text-left block cursor-pointer outline-none"
+                    title="Ver mi Perfil de Confianza"
+                  >
                     {user.email}
-                  </p>
+                  </button>
                   <button
                     onClick={handleSignOut}
                     className="flex items-center space-x-1 text-[10px] text-gray-500 hover:text-red-500 transition"
@@ -207,15 +226,20 @@ export const Navbar: FC = () => {
               {user ? (
                 <div className="flex items-center justify-between px-3">
                   <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => { setShowProfileModal(true); setIsOpen(false); }}
+                    className="flex items-center space-x-3 text-left focus:outline-none cursor-pointer"
+                  >
                     <div className="h-10 w-10 flex items-center justify-center rounded-full border-2 border-blue-500 bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold text-sm">
                       {user.email?.charAt(0).toUpperCase() || 'U'}
                     </div>
                     <div className="text-left">
-                      <p className="text-sm font-bold text-gray-800 max-w-[160px] truncate">
+                      <p className="text-sm font-bold text-gray-800 max-w-[160px] truncate hover:text-blue-600 transition">
                         {user.email}
                       </p>
-                      <p className="text-xs text-gray-500">Cuenta verificada</p>
+                      <p className="text-xs text-gray-500">Ver Perfil de Confianza</p>
                     </div>
+                  </button>
                   </div>
                   <button
                     onClick={handleSignOut}
@@ -240,6 +264,15 @@ export const Navbar: FC = () => {
 
       {/* Auth Modal */}
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+
+      {/* Trust Profile Modal */}
+      {user && (
+        <TrustProfileModal
+          isOpen={showProfileModal}
+          userId={user.id}
+          onClose={() => setShowProfileModal(false)}
+        />
+      )}
     </>
   );
 };

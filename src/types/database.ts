@@ -178,6 +178,162 @@ export interface Database {
           }
         ];
       };
+      user_profiles: {
+        Row: {
+          id: string;
+          display_name: string;
+          avatar_url: string | null;
+          phone_verified: boolean;
+          dni_verified: boolean;
+          dni_document_url: string | null;
+          bio: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          display_name?: string;
+          avatar_url?: string | null;
+          phone_verified?: boolean;
+          dni_verified?: boolean;
+          dni_document_url?: string | null;
+          bio?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          display_name?: string;
+          avatar_url?: string | null;
+          phone_verified?: boolean;
+          dni_verified?: boolean;
+          dni_document_url?: string | null;
+          bio?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      contact_leads: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          owner_id: string;
+          property_id: string;
+          created_at: string;
+          status: string;
+          tenant_response: string | null;
+          owner_response: string | null;
+          survey_shown_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          owner_id: string;
+          property_id: string;
+          created_at?: string;
+          status?: string;
+          tenant_response?: string | null;
+          owner_response?: string | null;
+          survey_shown_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          owner_id?: string;
+          property_id?: string;
+          created_at?: string;
+          status?: string;
+          tenant_response?: string | null;
+          owner_response?: string | null;
+          survey_shown_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'contact_leads_tenant_id_fkey';
+            columns: ['tenant_id'];
+            isOneToOne: false;
+            referencedRelation: 'auth.users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'contact_leads_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'auth.users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'contact_leads_property_id_fkey';
+            columns: ['property_id'];
+            isOneToOne: false;
+            referencedRelation: 'properties';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+      reviews: {
+        Row: {
+          id: string;
+          lead_id: string;
+          reviewer_id: string;
+          reviewee_id: string;
+          review_type: string;
+          rating: number;
+          payment_punctuality: number | null;
+          property_care: number | null;
+          coexistence: number | null;
+          property_maintenance: number | null;
+          communication: number | null;
+          agreement_respect: number | null;
+          comment: string;
+          status: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          lead_id: string;
+          reviewer_id: string;
+          reviewee_id: string;
+          review_type: string;
+          rating: number;
+          payment_punctuality?: number | null;
+          property_care?: number | null;
+          coexistence?: number | null;
+          property_maintenance?: number | null;
+          communication?: number | null;
+          agreement_respect?: number | null;
+          comment?: string;
+          status?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          lead_id?: string;
+          reviewer_id?: string;
+          reviewee_id?: string;
+          review_type?: string;
+          rating?: number;
+          payment_punctuality?: number | null;
+          property_care?: number | null;
+          coexistence?: number | null;
+          property_maintenance?: number | null;
+          communication?: number | null;
+          agreement_respect?: number | null;
+          comment?: string;
+          status?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'reviews_lead_id_fkey';
+            columns: ['lead_id'];
+            isOneToOne: false;
+            referencedRelation: 'contact_leads';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -192,3 +348,6 @@ export type PropertyInsert = Database['public']['Tables']['properties']['Insert'
 export type ProximityRow = Database['public']['Tables']['property_proximities']['Row'];
 export type ProximityInsert = Database['public']['Tables']['property_proximities']['Insert'];
 export type FavoriteRow = Database['public']['Tables']['favorites']['Row'];
+export type UserProfileRow = Database['public']['Tables']['user_profiles']['Row'];
+export type ContactLeadRow = Database['public']['Tables']['contact_leads']['Row'];
+export type ReviewRow = Database['public']['Tables']['reviews']['Row'];

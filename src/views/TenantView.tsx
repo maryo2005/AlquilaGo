@@ -3,10 +3,14 @@ import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { trackEvent } from '../services/trackingService';
+import { createContactLead } from '../services/leadService';
 import { PropertyCard } from '../components/PropertyCard';
 import { FilterBar } from '../components/FilterBar';
 import { InteractiveMap } from '../components/InteractiveMap';
 import { AuthModal } from '../components/AuthModal';
+import { DealConfirmationCard } from '../components/DealConfirmationCard';
+import { TrustProfileModal } from '../components/TrustProfileModal';
+import { VerificationBadge } from '../components/VerificationBadge';
 import {
   GraduationCap,
   Stethoscope,
@@ -18,7 +22,9 @@ import {
   Heart,
   Check,
   AlertCircle,
-  Loader2
+  Loader2,
+  Star,
+  Shield
 } from 'lucide-react';
 
 export const TenantView: FC = () => {
@@ -39,6 +45,11 @@ export const TenantView: FC = () => {
   const [activeTab, setActiveTab] = useState<'list' | 'map'>('list');
   const [modalImageIdx, setModalImageIdx] = useState(0);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileUserId, setProfileUserId] = useState<string | null>(null);
+
+  // Pull pending surveys and refreshSurveys from context
+  const { pendingSurveys, refreshSurveys } = useApp();
 
   // Active property details
   const activeProperty = properties.find((p) => p.id === activePropertyId);
@@ -93,12 +104,18 @@ export const TenantView: FC = () => {
   };
 
   const handleContactClick = () => {
-    if (activePropertyId) {
+    if (activeProperty && user) {
       trackEvent({
         eventName: 'first_contact_initiated',
         userId: user?.id,
         propertyId: activePropertyId
       });
+
+      // Register contact lead for the trust system
+      if (activeProperty.ownerId) {
+        createContactLead(user.id, activeProperty.ownerId, activeProperty.id)
+          .catch(err => console.warn('Error creating lead:', err));
+      }
     }
   };
 
@@ -190,6 +207,28 @@ export const TenantView: FC = () => {
       <section id="buscar" className="mx-auto -mt-8 w-full max-w-7xl px-4 relative z-20">
         <FilterBar />
       </section>
+
+      {/* Pending Surveys Section */}
+      {!loading && !error && pendingSurveys.length > 0 && (
+        <section className="mx-auto w-full max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
+          <div className="flex items-center space-x-2 mb-4">
+            <Star className="h-5 w-5 text-amber-500 fill-amber-500" />
+            <h2 className="text-lg font-extrabold text-gray-800">Confirmaciones Pendientes</h2>
+            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-600">
+              {pendingSurveys.length}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {pendingSurveys.map((survey) => (
+              <DealConfirmationCard
+                key={survey.lead.id}
+                survey={survey}
+                onResponded={refreshSurveys}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Loading State */}
       {loading && (
@@ -469,8 +508,27 @@ export const TenantView: FC = () => {
               <div className="mt-8 border-t border-gray-100 pt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div className="text-left">
                   <span className="text-[10px] block font-bold uppercase tracking-wider text-gray-400">Arrendador</span>
-                  <p className="text-sm font-extrabold text-gray-800">{activeProperty.contactName}</p>
-                  <p className="text-[10px] text-gray-500">Publicado hace poco</p>
+                  <div className="flex items-center space-x-2 mt-0.5">
+                    <p className="text-sm font-extrabold text-gray-800">{activeProperty.contactName}</p>
+                    {activeProperty.ownerId && (
+                      <VerificationBadge isVerified={false} size="sm" />
+                    )}
+                  </div>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <p className="text-[10px] text-gray-500">Publicado hace poco</p>
+                    {activeProperty.ownerId && (
+                      <button
+                        onClick={() => {
+                          setProfileUserId(activeProperty.ownerId!);
+                          setShowProfileModal(true);
+                        }}
+                        className="flex items-center space-x-1 text-[10px] font-bold text-blue-600 hover:text-blue-800 transition"
+                      >
+                        <Shield className="h-3 w-3" />
+                        <span>Ver perfil de confianza</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* WHATSAPP ACTION BUTTON */}
@@ -494,6 +552,18 @@ export const TenantView: FC = () => {
 
       {/* Auth Modal */}
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+
+      {/* Trust Profile Modal */}
+      {profileUserId && (
+        <TrustProfileModal
+          isOpen={showProfileModal}
+          userId={profileUserId}
+          onClose={() => {
+            setShowProfileModal(false);
+            setProfileUserId(null);
+          }}
+        />
+      )}
 
     </div>
   );

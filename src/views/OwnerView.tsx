@@ -3,6 +3,7 @@ import { useState, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { AuthModal } from '../components/AuthModal';
+import { DealConfirmationCard } from '../components/DealConfirmationCard';
 import { uploadMultipleImages } from '../services/storageService';
 import type { PropertyType, ContractType, ProximityInfo } from '../types/property';
 import { trujilloDistricts, trujilloTargets } from '../data/seedData';
@@ -22,11 +23,13 @@ import {
   Upload,
   ImageIcon,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Star,
+  Shield
 } from 'lucide-react';
 
 export const OwnerView: FC = () => {
-  const { properties, addProperty, deleteProperty } = useApp();
+  const { properties, addProperty, deleteProperty, pendingSurveys, refreshSurveys } = useApp();
   const { user } = useAuth();
 
   // Auth modal
@@ -249,11 +252,35 @@ export const OwnerView: FC = () => {
         </div>
 
         {/* Status indicator */}
-        <div className="flex items-center space-x-2 rounded-xl bg-blue-50 px-4 py-2 text-xs font-bold text-blue-700">
-          <CheckCircle className="h-4 w-4 text-blue-600" />
-          <span className="max-w-[200px] truncate">{user.email}</span>
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 rounded-xl bg-blue-50 px-4 py-2 text-xs font-bold text-blue-700">
+            <CheckCircle className="h-4 w-4 text-blue-600" />
+            <span className="max-w-[200px] truncate">{user.email}</span>
+          </div>
         </div>
       </div>
+
+      {/* Pending Surveys for Owner */}
+      {pendingSurveys.length > 0 && (
+        <section className="mb-8">
+          <div className="flex items-center space-x-2 mb-4">
+            <Star className="h-5 w-5 text-amber-500 fill-amber-500" />
+            <h2 className="text-lg font-extrabold text-gray-800">Confirmaciones de Alquiler</h2>
+            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-600">
+              {pendingSurveys.length}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {pendingSurveys.map((survey) => (
+              <DealConfirmationCard
+                key={survey.lead.id}
+                survey={survey}
+                onResponded={refreshSurveys}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Dashboard Statistics Row */}
       <section className="mb-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">

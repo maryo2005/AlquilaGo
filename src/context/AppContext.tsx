@@ -1,10 +1,13 @@
 import type { FC, ReactNode, Dispatch, SetStateAction } from 'react';
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { Property, FilterState, UserRole } from '../types/property';
+import type { PendingSurvey, ContactLead, UserProfile } from '../types/trustProfile';
 import { useAuth } from './AuthContext';
 import { fetchProperties as fetchPropertiesService, createProperty as createPropertyService, deleteProperty as deletePropertyService } from '../services/propertyService';
 import { fetchFavorites as fetchFavoritesService, addFavorite, removeFavorite } from '../services/favoriteService';
 import { trackEvent } from '../services/trackingService';
+import { fetchPendingSurveys as fetchPendingSurveysService } from '../services/leadService';
+import { fetchUserProfile } from '../services/profileService';
 
 interface AppContextType {
   properties: Property[];
@@ -24,6 +27,11 @@ interface AppContextType {
   filteredProperties: Property[];
   refreshProperties: () => Promise<void>;
   requireAuth: () => boolean;
+  // Trust Profile System
+  pendingSurveys: PendingSurvey[];
+  userProfile: UserProfile | null;
+  refreshSurveys: () => Promise<void>;
+  refreshUserProfile: () => Promise<void>;
 }
 
 const defaultFilters: FilterState = {
@@ -47,6 +55,10 @@ export const AppProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [activePropertyId, setActivePropertyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Trust Profile State
+  const [pendingSurveys, setPendingSurveys] = useState<PendingSurvey[]>([]);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   // Cargar propiedades desde Supabase
   const refreshProperties = useCallback(async () => {
@@ -86,6 +98,40 @@ export const AppProvider: FC<{ children: ReactNode }> = ({ children }) => {
   useEffect(() => {
     loadFavorites();
   }, [loadFavorites]);
+
+  // Cargar encuestas pendientes del usuario
+  const refreshSurveys = useCallback(async () => {
+    if (!user) {
+      setPendingSurveys([]);
+      return;
+    }
+    try {
+      const surveys = await fetchPendingSurveysService(user.id);
+      setPendingSurveys(surveys);
+    } catch (err) {
+      console.warn('Error loading surveys:', err);
+    }
+  }, [user]);
+
+  // Cargar perfil del usuario
+  const refreshUserProfile = useCallback(async () => {
+    if (!user) {
+      setUserProfile(null);
+      return;
+    }
+    try {
+      const profile = await fetchUserProfile(user.id);
+      setUserProfile(profile);
+    } catch (err) {
+      console.warn('Error loading user profile:', err);
+    }
+  }, [user]);
+
+  // Efecto: cargar surveys y perfil cuando cambie el usuario
+  useEffect(() => {
+    refreshSurveys();
+    refreshUserProfile();
+  }, [refreshSurveys, refreshUserProfile]);
 
   // Recuperar rol guardado
   useEffect(() => {
@@ -241,6 +287,11 @@ export const AppProvider: FC<{ children: ReactNode }> = ({ children }) => {
         filteredProperties,
         refreshProperties,
         requireAuth,
+        // Trust Profile
+        pendingSurveys,
+        userProfile,
+        refreshSurveys,
+        refreshUserProfile,
       }}
     >
       {children}
