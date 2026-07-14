@@ -326,7 +326,7 @@ export const TenantView: FC = () => {
           <div className="relative flex h-full max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
 
             {/* Modal Header Images */}
-            <div className="relative h-64 w-full bg-gray-100 sm:h-80 md:h-96 flex-shrink-0">
+            <div className="relative h-48 w-full bg-gray-100 sm:h-56 md:h-64 flex-shrink-0">
               <img
                 src={activeProperty.images[modalImageIdx] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'}
                 alt={activeProperty.title}
@@ -444,7 +444,7 @@ export const TenantView: FC = () => {
               {/* Description */}
               <div className="mt-6">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400">Descripción del Inmueble</h4>
-                <p className="mt-2 text-xs leading-relaxed text-gray-600 whitespace-pre-line">
+                <p className="mt-2 text-sm leading-relaxed text-gray-700 whitespace-pre-line">
                   {activeProperty.description}
                 </p>
               </div>
