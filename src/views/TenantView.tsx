@@ -23,8 +23,7 @@ import {
   Check,
   AlertCircle,
   Loader2,
-  Star,
-  Shield
+  Star
 } from 'lucide-react';
 
 export const TenantView: FC = () => {

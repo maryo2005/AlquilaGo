@@ -128,7 +128,7 @@ export async function updateUserProfile(userId: string, input: ProfileUpdateInpu
   try {
     const { data, error } = await supabase
       .from('user_profiles')
-      .update(updateData)
+      .update(updateData as any)
       .eq('id', userId)
       .select()
       .single();

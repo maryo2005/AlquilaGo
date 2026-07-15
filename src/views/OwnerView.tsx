@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { AuthModal } from '../components/AuthModal';
 import { DealConfirmationCard } from '../components/DealConfirmationCard';
 import { TrustProfileModal } from '../components/TrustProfileModal';
+import { PublicationPaymentModal } from '../components/PublicationPaymentModal';
 import { uploadMultipleImages } from '../services/storageService';
 import { fetchLeadsForOwner } from '../services/leadService';
 import type { PropertyType, ContractType, ProximityInfo } from '../types/property';
@@ -27,19 +28,23 @@ import {
   ImageIcon,
   Loader2,
   AlertCircle,
-  Star,
-  Shield
+  Star
 } from 'lucide-react';
 
 export const OwnerView: FC = () => {
   const { properties, addProperty, deleteProperty, pendingSurveys, refreshSurveys } = useApp();
   const { user } = useAuth();
 
-  // Auth modal
+  // Auth and payment modal states
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [receivedLeads, setReceivedLeads] = useState<ContactLead[]>([]);
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
+
+  // Publication payment states
+  const [selectedPlan, setSelectedPlan] = useState<'basic' | 'promo'>('basic');
+  const [isFeaturedListing, setIsFeaturedListing] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -190,9 +195,12 @@ export const OwnerView: FC = () => {
       return;
     }
 
-    setIsSubmitting(true);
     setFormError(null);
+    setShowPaymentModal(true); // Open payment checkout modal first!
+  };
 
+  const handlePaymentSuccess = async () => {
+    setIsSubmitting(true);
     try {
       // 1. Upload images to Supabase Storage
       let imageUrls: string[] = [];
@@ -209,7 +217,7 @@ export const OwnerView: FC = () => {
       const lat = -8.115 + latOffset;
       const lng = -79.032 + lngOffset;
 
-      // 3. Create property in Supabase
+      // 3. Create property in Supabase with highlighting status from the plan selections
       await addProperty({
         title,
         description,
@@ -230,7 +238,7 @@ export const OwnerView: FC = () => {
         services: selectedServices,
         phone,
         contactName,
-        isFeatured: false,
+        isFeatured: isFeaturedListing,
       });
 
       setSuccessMsg(true);
@@ -245,11 +253,14 @@ export const OwnerView: FC = () => {
       setSelectedFiles([]);
       imagePreviewUrls.forEach(url => URL.revokeObjectURL(url));
       setImagePreviewUrls([]);
+      setContactName('');
+      setPhone('');
+      setIsFeaturedListing(false);
 
       setTimeout(() => setSuccessMsg(false), 4000);
     } catch (err) {
       console.error('Error publishing property:', err);
-      setFormError('Error al publicar la propiedad. Intenta de nuevo.');
+      throw new Error('Error al publicar la propiedad. Intenta de nuevo.');
     } finally {
       setIsSubmitting(false);
     }
@@ -657,6 +668,89 @@ export const OwnerView: FC = () => {
               </div>
 
               {/* Owner Info & Submit */}
+              {/* PLANES DE PUBLICACIÓN Y COSTOS */}
+              <div className="mt-8 border-t border-gray-100 pt-5 space-y-4">
+                <span className="text-[10px] font-black uppercase tracking-wider text-gray-400 block">
+                  Planes de Publicación y Costo
+                </span>
+                
+                <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+                  {/* Plan Basico */}
+                  <div
+                    onClick={() => setSelectedPlan('basic')}
+                    className={`flex flex-col rounded-xl border p-4 cursor-pointer transition relative overflow-hidden ${
+                      selectedPlan === 'basic'
+                        ? 'border-blue-500 bg-blue-50/10 shadow-sm'
+                        : 'border-gray-200 bg-white hover:bg-gray-50/55'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-gray-800">Anuncio Básico</span>
+                      <span className="text-xs font-black text-blue-700">S/. 20.00 /mes</span>
+                    </div>
+                    <span className="text-[9px] text-gray-500 mt-1">
+                      Publicación de 1 habitación o departamento en el catálogo de Trujillo.
+                    </span>
+                    {selectedPlan === 'basic' && (
+                      <div className="absolute right-0 top-0 bg-blue-500 text-white text-[8px] font-black px-2 py-0.5 rounded-bl-lg">
+                        Activo
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Plan Promo */}
+                  <div
+                    onClick={() => setSelectedPlan('promo')}
+                    className={`flex flex-col rounded-xl border p-4 cursor-pointer transition relative overflow-hidden ${
+                      selectedPlan === 'promo'
+                        ? 'border-blue-500 bg-blue-50/10 shadow-sm'
+                        : 'border-gray-200 bg-white hover:bg-gray-50/55'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-gray-800">Promoción Nuevos</span>
+                      <span className="text-xs font-black text-blue-700">S/. 30.00 /mes</span>
+                    </div>
+                    <span className="text-[9px] text-gray-500 mt-1">
+                      Pack especial de 2 anuncios al mes. ¡Ahorra S/. 10 en tu publicación!
+                    </span>
+                    {selectedPlan === 'promo' && (
+                      <div className="absolute right-0 top-0 bg-blue-500 text-white text-[8px] font-black px-2 py-0.5 rounded-bl-lg">
+                        Activo
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Destacado Switch */}
+                <div
+                  onClick={() => setIsFeaturedListing(!isFeaturedListing)}
+                  className="flex items-start space-x-3 rounded-xl border border-indigo-100 bg-indigo-50/30 p-4 cursor-pointer hover:bg-indigo-50/50 transition"
+                >
+                  <input
+                    type="checkbox"
+                    checked={isFeaturedListing}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      setIsFeaturedListing(e.target.checked);
+                    }}
+                    className="mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-indigo-950 flex items-center space-x-1">
+                        <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
+                        <span>Destacar Anuncio (+S/. 10.00/mes)</span>
+                      </span>
+                      <span className="text-[10px] font-extrabold text-indigo-700">Upgrade Opcional</span>
+                    </div>
+                    <p className="text-[9px] text-indigo-900/60 mt-1">
+                      Multiplica tus visualizaciones. Aparece en las primeras posiciones del catálogo con un indicador visual destacado (sello premium).
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div className="mt-8 border-t border-gray-100 pt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="flex flex-col space-y-1">
                   <span className="text-[10px] font-black uppercase tracking-wider text-gray-400">Nombre del Arrendador *</span>
@@ -839,6 +933,15 @@ export const OwnerView: FC = () => {
           }}
         />
       )}
+
+      {/* Publication Checkout Gateway Modal */}
+      <PublicationPaymentModal
+        isOpen={showPaymentModal}
+        plan={selectedPlan}
+        isFeatured={isFeaturedListing}
+        onPaymentSuccess={handlePaymentSuccess}
+        onClose={() => setShowPaymentModal(false)}
+      />
 
     </div>
   );
