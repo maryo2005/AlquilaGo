@@ -19,6 +19,8 @@ export interface UserProfile {
   dniVerified: boolean;
   dniDocumentUrl: string | null;
   bio: string | null;
+  phone: string | null;
+  dni: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -110,6 +112,8 @@ export interface ProfileUpdateInput {
   avatarUrl?: string | null;
   bio?: string | null;
   phoneVerified?: boolean;
+  phone?: string | null;
+  dni?: string | null;
 }
 
 // === Encuesta de confirmación ===

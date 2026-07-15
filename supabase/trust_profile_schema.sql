@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   display_name TEXT NOT NULL DEFAULT '',
   avatar_url TEXT,
+  phone TEXT DEFAULT '',
+  dni TEXT DEFAULT '',
   phone_verified BOOLEAN DEFAULT FALSE,
   dni_verified BOOLEAN DEFAULT FALSE,
   dni_document_url TEXT,
@@ -18,6 +20,7 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
 
 -- ============================================
 -- 2. Tabla de Contact Leads (Registro de Contactos WhatsApp)
@@ -163,8 +166,20 @@ CREATE POLICY "dni_select_own" ON storage.objects
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-  INSERT INTO public.user_profiles (id, display_name)
-  VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'display_name', split_part(NEW.email, '@', 1)));
+  INSERT INTO public.user_profiles (id, display_name, phone, dni, phone_verified, dni_verified)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.raw_user_meta_data->>'display_name', split_part(NEW.email, '@', 1)),
+    COALESCE(NEW.raw_user_meta_data->>'phone', ''),
+    COALESCE(NEW.raw_user_meta_data->>'dni', ''),
+    FALSE,
+    FALSE
+  )
+  ON CONFLICT (id) DO UPDATE
+  SET 
+    display_name = EXCLUDED.display_name,
+    phone = EXCLUDED.phone,
+    dni = EXCLUDED.dni;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -174,3 +189,8 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Nota: Si la tabla user_profiles ya existe, puedes ejecutar lo siguiente para migrarla:
+-- ALTER TABLE public.user_profiles ADD COLUMN IF NOT EXISTS phone TEXT DEFAULT '';
+-- ALTER TABLE public.user_profiles ADD COLUMN IF NOT EXISTS dni TEXT DEFAULT '';
+

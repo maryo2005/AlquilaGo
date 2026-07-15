@@ -197,6 +197,8 @@ export type Database = {
           dni_verified: boolean
           dni_document_url: string | null
           bio: string | null
+          phone: string | null
+          dni: string | null
           created_at: string
           updated_at: string
         }
@@ -208,6 +210,8 @@ export type Database = {
           dni_verified?: boolean
           dni_document_url?: string | null
           bio?: string | null
+          phone?: string | null
+          dni?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -219,6 +223,8 @@ export type Database = {
           dni_verified?: boolean
           dni_document_url?: string | null
           bio?: string | null
+          phone?: string | null
+          dni?: string | null
           created_at?: string
           updated_at?: string
         }

@@ -21,6 +21,8 @@ export async function fetchUserProfile(userId: string): Promise<UserProfile> {
       phoneVerified: true,
       dniVerified: true,
       dniDocumentUrl: null,
+      phone: '987654321',
+      dni: '12345678',
       bio: 'Inquilino verificado en Trujillo. Destaca por su puntualidad en pagos, excelente convivencia y cuidado del inmueble.',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -41,6 +43,8 @@ export async function fetchUserProfile(userId: string): Promise<UserProfile> {
       phoneVerified: true,
       dniVerified: true,
       dniDocumentUrl: null,
+      phone: '987654321',
+      dni: '12345678',
       bio: 'Arrendador destacado en Trujillo. Reconocido por brindar un excelente mantenimiento a sus propiedades y una comunicación atenta.',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -65,6 +69,8 @@ export async function fetchUserProfile(userId: string): Promise<UserProfile> {
         const { data: userData } = await supabase.auth.getUser();
         const email = userData?.user?.email || 'testuser@example.com';
         const defaultName = email.split('@')[0] || 'Usuario Demo';
+        const phone = userData?.user?.user_metadata?.phone || '';
+        const dni = userData?.user?.user_metadata?.dni || '';
         
         return {
           id: userId,
@@ -73,6 +79,8 @@ export async function fetchUserProfile(userId: string): Promise<UserProfile> {
           phoneVerified: true,
           dniVerified: true,
           dniDocumentUrl: null,
+          phone: phone,
+          dni: dni,
           bio: '⚠️ Perfil de demostración local. Recuerda ejecutar trust_profile_schema.sql en tu editor de SQL de Supabase para activar la base de datos real.',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
@@ -107,6 +115,8 @@ export async function fetchUserProfile(userId: string): Promise<UserProfile> {
       phoneVerified: true,
       dniVerified: true,
       dniDocumentUrl: null,
+      phone: '',
+      dni: '',
       bio: '⚠️ Perfil de demostración local. Recuerda ejecutar trust_profile_schema.sql en tu editor de SQL de Supabase para activar la base de datos real.',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -124,6 +134,8 @@ export async function updateUserProfile(userId: string, input: ProfileUpdateInpu
   if (input.avatarUrl !== undefined) updateData.avatar_url = input.avatarUrl;
   if (input.bio !== undefined) updateData.bio = input.bio;
   if (input.phoneVerified !== undefined) updateData.phone_verified = input.phoneVerified;
+  if (input.phone !== undefined) updateData.phone = input.phone;
+  if (input.dni !== undefined) updateData.dni = input.dni;
 
   try {
     const { data, error } = await supabase
@@ -144,6 +156,8 @@ export async function updateUserProfile(userId: string, input: ProfileUpdateInpu
       phoneVerified: input.phoneVerified || false,
       dniVerified: true,
       dniDocumentUrl: null,
+      phone: input.phone || '',
+      dni: input.dni || '',
       bio: input.bio || '⚠️ Perfil de demostración local.',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -311,6 +325,8 @@ function mapProfileRow(row: Record<string, unknown>): UserProfile {
     dniVerified: row.dni_verified as boolean,
     dniDocumentUrl: row.dni_document_url as string | null,
     bio: row.bio as string | null,
+    phone: (row.phone as string) || null,
+    dni: (row.dni as string) || null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };

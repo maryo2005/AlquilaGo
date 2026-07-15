@@ -1,7 +1,7 @@
 import type { FC, FormEvent } from 'react';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { X, Mail, Lock, UserPlus, LogIn, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import { X, Mail, Lock, UserPlus, LogIn, Loader2, AlertCircle, CheckCircle, User, Phone, CreditCard } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -15,6 +15,9 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'l
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [dni, setDni] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -25,6 +28,9 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'l
     setEmail('');
     setPassword('');
     setConfirmPassword('');
+    setDisplayName('');
+    setPhone('');
+    setDni('');
     setError(null);
     setSuccessMessage(null);
   };
@@ -56,6 +62,21 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'l
     e.preventDefault();
     setError(null);
 
+    if (!displayName.trim()) {
+      setError('Por favor, ingrese su nombre completo');
+      return;
+    }
+
+    if (!dni.trim() || dni.length < 8) {
+      setError('Por favor, ingrese un documento de identidad válido (mínimo 8 caracteres)');
+      return;
+    }
+
+    if (!phone.trim() || phone.length < 9) {
+      setError('Por favor, ingrese un número de celular válido (mínimo 9 dígitos)');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Las contraseñas no coinciden');
       return;
@@ -68,7 +89,7 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'l
 
     setLoading(true);
 
-    const { error: authError } = await signUp(email, password);
+    const { error: authError } = await signUp(email, password, displayName, phone, dni);
 
     setLoading(false);
 
@@ -151,6 +172,59 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'l
           )}
 
           <form onSubmit={activeTab === 'login' ? handleLogin : handleRegister} className="space-y-4">
+            {/* Campos de Registro */}
+            {activeTab === 'register' && (
+              <>
+                {/* Nombre Completo */}
+                <div className="flex flex-col space-y-1.5">
+                  <label className="text-xs font-bold text-gray-700">Nombre Completo</label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      required
+                      placeholder="Juan Pérez"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      className="w-full rounded-xl border border-gray-200 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-50"
+                    />
+                  </div>
+                </div>
+
+                {/* Documento de Identidad */}
+                <div className="flex flex-col space-y-1.5">
+                  <label className="text-xs font-bold text-gray-700">Documento de Identidad (DNI/CE)</label>
+                  <div className="relative">
+                    <CreditCard className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      required
+                      placeholder="12345678"
+                      value={dni}
+                      onChange={(e) => setDni(e.target.value.replace(/\D/g, ''))}
+                      className="w-full rounded-xl border border-gray-200 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-50"
+                    />
+                  </div>
+                </div>
+
+                {/* Celular */}
+                <div className="flex flex-col space-y-1.5">
+                  <label className="text-xs font-bold text-gray-700">Número de Celular</label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="tel"
+                      required
+                      placeholder="987654321"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                      className="w-full rounded-xl border border-gray-200 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-50"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
             {/* Email */}
             <div className="flex flex-col space-y-1.5">
               <label className="text-xs font-bold text-gray-700">Correo Electrónico</label>
