@@ -103,7 +103,7 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'l
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-sm">
-      <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+      <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl max-h-[90vh] flex flex-col">
         {/* Header con gradiente */}
         <div className="relative bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-8 text-center text-white">
           {/* Decorative circles */}
@@ -154,7 +154,7 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, defaultTab = 'l
         </div>
 
         {/* Form */}
-        <div className="p-6">
+        <div className="p-6 overflow-y-auto flex-1">
           {/* Error Alert */}
           {error && (
             <div className="mb-4 flex items-center space-x-2 rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-xs font-semibold text-red-700">
