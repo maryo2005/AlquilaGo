@@ -506,30 +506,36 @@ export const TenantView: FC = () => {
 
               {/* Contact area */}
               <div className="mt-8 border-t border-gray-100 pt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div className="text-left">
-                  <span className="text-[10px] block font-bold uppercase tracking-wider text-gray-400">Arrendador</span>
-                  <div className="flex items-center space-x-2 mt-0.5">
-                    <p className="text-sm font-extrabold text-gray-800">{activeProperty.contactName}</p>
-                    {activeProperty.ownerId && (
-                      <VerificationBadge isVerified={false} size="sm" />
-                    )}
+                <button
+                  onClick={() => {
+                    const cleanName = activeProperty.contactName
+                      .toLowerCase()
+                      .normalize('NFD')
+                      .replace(/[\u0300-\u036f]/g, '')
+                      .replace(/[^a-z0-9]/g, '-');
+                    const ownerId = activeProperty.ownerId || `demo-owner-${cleanName}`;
+                    setProfileUserId(ownerId);
+                    setShowProfileModal(true);
+                  }}
+                  className="text-left group flex items-start space-x-3 rounded-xl border border-gray-100 hover:border-blue-200 bg-gray-50/50 hover:bg-blue-50/20 p-3 transition cursor-pointer focus:outline-none w-full sm:w-auto"
+                  title="Ver perfil de confianza del arrendador"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold text-sm flex-shrink-0">
+                    {activeProperty.contactName.charAt(0).toUpperCase()}
                   </div>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <p className="text-[10px] text-gray-500">Publicado hace poco</p>
-                    {activeProperty.ownerId && (
-                      <button
-                        onClick={() => {
-                          setProfileUserId(activeProperty.ownerId!);
-                          setShowProfileModal(true);
-                        }}
-                        className="flex items-center space-x-1 text-[10px] font-bold text-blue-600 hover:text-blue-800 transition"
-                      >
-                        <Shield className="h-3 w-3" />
-                        <span>Ver perfil de confianza</span>
-                      </button>
-                    )}
+                  <div>
+                    <span className="text-[10px] block font-bold uppercase tracking-wider text-gray-400">Arrendador</span>
+                    <div className="flex items-center space-x-1.5 mt-0.5">
+                      <span className="text-sm font-extrabold text-gray-800 group-hover:text-blue-700 transition">
+                        {activeProperty.contactName}
+                      </span>
+                      <VerificationBadge isVerified={true} size="sm" />
+                    </div>
+                    <span className="block text-[10px] text-gray-500 mt-0.5">
+                      Ver Perfil de Confianza →
+                    </span>
                   </div>
-                </div>
+                </button>
 
                 {/* WHATSAPP ACTION BUTTON */}
                 <a
@@ -558,6 +564,7 @@ export const TenantView: FC = () => {
         <TrustProfileModal
           isOpen={showProfileModal}
           userId={profileUserId}
+          roleRestriction="owner"
           onClose={() => {
             setShowProfileModal(false);
             setProfileUserId(null);

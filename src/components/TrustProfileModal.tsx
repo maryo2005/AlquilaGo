@@ -21,10 +21,13 @@ import {
   Award
 } from 'lucide-react';
 
+import { useAuth } from '../context/AuthContext';
+
 interface TrustProfileModalProps {
   isOpen: boolean;
   userId: string;
   onClose: () => void;
+  roleRestriction?: 'tenant' | 'owner';
 }
 
 type ActiveTab = 'tenant' | 'owner';
@@ -126,12 +129,18 @@ const ReviewCard: FC<{ review: Review }> = ({ review }) => {
 export const TrustProfileModal: FC<TrustProfileModalProps> = ({
   isOpen,
   userId,
-  onClose
+  onClose,
+  roleRestriction
 }) => {
+  const { user } = useAuth();
   const [profile, setProfile] = useState<DualTrustProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<ActiveTab>('tenant');
   const [error, setError] = useState<string | null>(null);
+
+  const isOwnProfile = user?.id === userId;
+  const showTenantTab = isOwnProfile || roleRestriction === 'tenant' || userId.startsWith('demo-tenant-');
+  const showOwnerTab = isOwnProfile || roleRestriction === 'owner' || userId.startsWith('demo-owner-');
 
   const loadProfile = useCallback(async () => {
     setLoading(true);
@@ -152,6 +161,16 @@ export const TrustProfileModal: FC<TrustProfileModalProps> = ({
       loadProfile();
     }
   }, [isOpen, userId, loadProfile]);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (showTenantTab && !showOwnerTab) {
+        setActiveTab('tenant');
+      } else if (showOwnerTab && !showTenantTab) {
+        setActiveTab('owner');
+      }
+    }
+  }, [isOpen, showTenantTab, showOwnerTab]);
 
   if (!isOpen) return null;
 
@@ -241,40 +260,42 @@ export const TrustProfileModal: FC<TrustProfileModalProps> = ({
         </div>
 
         {/* Tab Selector */}
-        <div className="flex border-b border-gray-100 bg-gray-50/50 px-4 flex-shrink-0">
-          <button
-            onClick={() => setActiveTab('tenant')}
-            className={`flex items-center space-x-2 border-b-2 px-4 py-3 text-xs font-bold transition ${
-              activeTab === 'tenant'
-                ? 'border-blue-600 text-blue-700'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <User className="h-3.5 w-3.5" />
-            <span>Ficha de Inquilino</span>
-            {!loading && profile && profile.tenantCard.totalReviews > 0 && (
-              <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[9px] font-black text-blue-700">
-                {profile.tenantCard.totalReviews}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('owner')}
-            className={`flex items-center space-x-2 border-b-2 px-4 py-3 text-xs font-bold transition ${
-              activeTab === 'owner'
-                ? 'border-indigo-600 text-indigo-700'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <Briefcase className="h-3.5 w-3.5" />
-            <span>Ficha de Arrendador</span>
-            {!loading && profile && profile.ownerCard.totalReviews > 0 && (
-              <span className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-[9px] font-black text-indigo-700">
-                {profile.ownerCard.totalReviews}
-              </span>
-            )}
-          </button>
-        </div>
+        {showTenantTab && showOwnerTab && (
+          <div className="flex border-b border-gray-100 bg-gray-50/50 px-4 flex-shrink-0">
+            <button
+              onClick={() => setActiveTab('tenant')}
+              className={`flex items-center space-x-2 border-b-2 px-4 py-3 text-xs font-bold transition ${
+                activeTab === 'tenant'
+                  ? 'border-blue-600 text-blue-700'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <User className="h-3.5 w-3.5" />
+              <span>Ficha de Inquilino</span>
+              {!loading && profile && profile.tenantCard.totalReviews > 0 && (
+                <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[9px] font-black text-blue-700">
+                  {profile.tenantCard.totalReviews}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('owner')}
+              className={`flex items-center space-x-2 border-b-2 px-4 py-3 text-xs font-bold transition ${
+                activeTab === 'owner'
+                  ? 'border-indigo-600 text-indigo-700'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Briefcase className="h-3.5 w-3.5" />
+              <span>Ficha de Arrendador</span>
+              {!loading && profile && profile.ownerCard.totalReviews > 0 && (
+                <span className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-[9px] font-black text-indigo-700">
+                  {profile.ownerCard.totalReviews}
+                </span>
+              )}
+            </button>
+          </div>
+        )}
 
         {/* Tab Content (Scrollable) */}
         <div className="flex-1 overflow-y-auto p-5">
@@ -296,7 +317,7 @@ export const TrustProfileModal: FC<TrustProfileModalProps> = ({
           ) : profile ? (
             <>
               {/* === FICHA DE INQUILINO === */}
-              {activeTab === 'tenant' && (
+              {activeTab === 'tenant' && showTenantTab && (
                 <div className="space-y-5">
                   {/* Overall Rating */}
                   <div className="flex items-center space-x-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 p-4 border border-blue-100/50">
@@ -362,7 +383,7 @@ export const TrustProfileModal: FC<TrustProfileModalProps> = ({
               )}
 
               {/* === FICHA DE ARRENDADOR === */}
-              {activeTab === 'owner' && (
+              {activeTab === 'owner' && showOwnerTab && (
                 <div className="space-y-5">
                   {/* Overall Rating */}
                   <div className="flex items-center space-x-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 p-4 border border-indigo-100/50">

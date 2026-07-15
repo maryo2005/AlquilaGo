@@ -6,6 +6,47 @@ import type { UserProfile, DualTrustProfile, TenantCard, OwnerCard, ProfileUpdat
  * Si no existe (usuarios antiguos), lo crea automáticamente.
  */
 export async function fetchUserProfile(userId: string): Promise<UserProfile> {
+  // Si es un ID de demo, retornar datos de mockup inmediatamente
+  if (userId.startsWith('demo-tenant-')) {
+    const namePart = userId.replace('demo-tenant-', '');
+    const displayName = namePart
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+      
+    return {
+      id: userId,
+      displayName: displayName,
+      avatarUrl: null,
+      phoneVerified: true,
+      dniVerified: true,
+      dniDocumentUrl: null,
+      bio: 'Inquilino verificado en Trujillo. Destaca por su puntualidad en pagos, excelente convivencia y cuidado del inmueble.',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  if (userId.startsWith('demo-owner-')) {
+    const namePart = userId.replace('demo-owner-', '');
+    const displayName = namePart
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+      
+    return {
+      id: userId,
+      displayName: displayName,
+      avatarUrl: null,
+      phoneVerified: true,
+      dniVerified: true,
+      dniDocumentUrl: null,
+      bio: 'Arrendador destacado en Trujillo. Reconocido por brindar un excelente mantenimiento a sus propiedades y una comunicación atenta.',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+  }
+
   try {
     const { data, error } = await supabase
       .from('user_profiles')
@@ -171,8 +212,8 @@ export async function fetchDualProfile(userId: string): Promise<DualTrustProfile
     .eq('status', 'active')
     .order('created_at', { ascending: false });
 
-  if (isMissingTable(tenantError) || isMissingTable(ownerError) || profile.bio?.includes('demostración local')) {
-    console.warn('Tablas de reseñas no encontradas. Retornando reseñas de demostración local.');
+  if (isMissingTable(tenantError) || isMissingTable(ownerError) || profile.bio?.includes('demostración local') || userId.startsWith('demo-')) {
+    console.warn('Tablas de reseñas no encontradas o ID demo. Retornando reseñas de demostración local.');
     
     const mockTenantReviews = [
       {

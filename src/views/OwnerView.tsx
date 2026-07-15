@@ -1,11 +1,14 @@
 import type { FC, FormEvent } from 'react';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { AuthModal } from '../components/AuthModal';
 import { DealConfirmationCard } from '../components/DealConfirmationCard';
+import { TrustProfileModal } from '../components/TrustProfileModal';
 import { uploadMultipleImages } from '../services/storageService';
+import { fetchLeadsForOwner } from '../services/leadService';
 import type { PropertyType, ContractType, ProximityInfo } from '../types/property';
+import type { ContactLead } from '../types/trustProfile';
 import { trujilloDistricts, trujilloTargets } from '../data/seedData';
 import {
   Building,
@@ -34,6 +37,17 @@ export const OwnerView: FC = () => {
 
   // Auth modal
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [receivedLeads, setReceivedLeads] = useState<ContactLead[]>([]);
+  const [profileUserId, setProfileUserId] = useState<string | null>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      fetchLeadsForOwner(user.id)
+        .then(leads => setReceivedLeads(leads))
+        .catch(err => console.warn('Error fetching leads:', err));
+    }
+  }, [user]);
 
   // States for new property form
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -751,9 +765,80 @@ export const OwnerView: FC = () => {
             )}
 
           </div>
-        </div>
 
+          {/* INCOMING LEADS (INTERESTED TENANTS) */}
+          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm mt-6">
+            <div className="mb-4 flex items-center justify-between border-b border-gray-50 pb-3">
+              <h2 className="text-base font-extrabold text-gray-800">Inquilinos Interesados</h2>
+              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-600">
+                {receivedLeads.length}
+              </span>
+            </div>
+
+            {receivedLeads.length > 0 ? (
+              <div className="space-y-4">
+                {receivedLeads.map((lead) => (
+                  <div
+                    key={lead.id}
+                    className="flex flex-col rounded-xl border border-gray-100 p-3 bg-slate-50/50 hover:border-blue-100 transition"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold text-sm flex-shrink-0">
+                        {lead.otherUserName?.charAt(0).toUpperCase() || 'I'}
+                      </div>
+                      <div className="flex-1 min-w-0 text-left">
+                        <button
+                          onClick={() => {
+                            setProfileUserId(lead.tenantId);
+                            setShowProfileModal(true);
+                          }}
+                          className="text-xs font-bold text-gray-800 hover:text-blue-700 transition cursor-pointer text-left block focus:outline-none"
+                        >
+                          {lead.otherUserName}
+                        </button>
+                        <p className="text-[9px] text-gray-400">
+                          Contactó hace poco
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setProfileUserId(lead.tenantId);
+                          setShowProfileModal(true);
+                        }}
+                        className="rounded-lg bg-blue-50 hover:bg-blue-100 px-2 py-1 text-[9px] font-bold text-blue-700 transition cursor-pointer focus:outline-none"
+                      >
+                        Ver Perfil
+                      </button>
+                    </div>
+                    <div className="mt-2.5 border-t border-gray-100/60 pt-2 text-[10px] text-gray-500 text-left truncate">
+                      <span className="font-bold text-gray-400">Interés: </span>
+                      {lead.propertyTitle}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-8 text-center text-gray-400">
+                <p className="text-xs">No hay solicitudes de contacto recientes.</p>
+              </div>
+            )}
+          </div>
+
+        </div>
       </div>
+
+      {/* Trust Profile Modal */}
+      {profileUserId && (
+        <TrustProfileModal
+          isOpen={showProfileModal}
+          userId={profileUserId}
+          roleRestriction="tenant"
+          onClose={() => {
+            setShowProfileModal(false);
+            setProfileUserId(null);
+          }}
+        />
+      )}
 
     </div>
   );

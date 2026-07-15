@@ -244,3 +244,107 @@ function mapLeadRow(row: Record<string, unknown>): ContactLead {
     surveyShownAt: row.survey_shown_at as string | null,
   };
 }
+
+/**
+ * Obtiene todos los leads recibidos por el arrendador.
+ * Si las tablas de Supabase no existen, retorna datos de demostración local.
+ */
+export async function fetchLeadsForOwner(ownerId: string): Promise<ContactLead[]> {
+  try {
+    const { data, error } = await supabase
+      .from('contact_leads')
+      .select('*')
+      .eq('owner_id', ownerId)
+      .order('created_at', { ascending: false });
+
+    const isMissingTable = (err: any) =>
+      err && (
+        err.code === 'PGRST205' ||
+        err.code === '42P01' ||
+        err.message?.includes('schema cache') ||
+        err.message?.includes('does not exist')
+      );
+
+    if (error) {
+      if (isMissingTable(error)) {
+        console.warn('Tabla contact_leads no encontrada. Usando leads de demostración.');
+        return getMockLeads(ownerId);
+      }
+      throw error;
+    }
+
+    const enrichedLeads: ContactLead[] = [];
+    for (const lead of (data || [])) {
+      const { data: tenantProfile } = await supabase
+        .from('user_profiles')
+        .select('display_name, avatar_url')
+        .eq('id', lead.tenant_id)
+        .single();
+
+      const { data: property } = await supabase
+        .from('properties')
+        .select('title')
+        .eq('id', lead.property_id)
+        .single();
+
+      enrichedLeads.push({
+        ...mapLeadRow(lead),
+        otherUserName: tenantProfile?.display_name || 'Inquilino Interesado',
+        otherUserAvatar: tenantProfile?.avatar_url || null,
+        propertyTitle: property?.title || 'Propiedad'
+      });
+    }
+
+    return enrichedLeads;
+  } catch (err) {
+    console.warn('Error en fetchLeadsForOwner, retornando mockup:', err);
+    return getMockLeads(ownerId);
+  }
+}
+
+function getMockLeads(ownerId: string): ContactLead[] {
+  return [
+    {
+      id: 'mock-lead-a',
+      tenantId: 'demo-tenant-juan-perez',
+      ownerId: ownerId,
+      propertyId: 'a1b2c3d4-0001-4000-8000-000000000001',
+      createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+      status: 'pending',
+      tenantResponse: null,
+      ownerResponse: null,
+      surveyShownAt: null,
+      otherUserName: 'Juan Pérez',
+      otherUserAvatar: null,
+      propertyTitle: 'Habitación Ejecutiva Amoblada para Médicos y Residentes'
+    },
+    {
+      id: 'mock-lead-b',
+      tenantId: 'demo-tenant-lucia-sanchez',
+      ownerId: ownerId,
+      propertyId: 'a1b2c3d4-0002-4000-8000-000000000002',
+      createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+      status: 'confirmed',
+      tenantResponse: 'yes_rented',
+      ownerResponse: 'yes_tenant',
+      surveyShownAt: null,
+      otherUserName: 'Lucía Sánchez',
+      otherUserAvatar: null,
+      propertyTitle: 'Moderno Departamento de Estreno frente a Parque'
+    },
+    {
+      id: 'mock-lead-c',
+      tenantId: 'demo-tenant-pedro-castro',
+      ownerId: ownerId,
+      propertyId: 'a1b2c3d4-0003-4000-8000-000000000003',
+      createdAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
+      status: 'not_completed',
+      tenantResponse: 'just_chatted',
+      ownerResponse: 'no',
+      surveyShownAt: null,
+      otherUserName: 'Pedro Castro',
+      otherUserAvatar: null,
+      propertyTitle: 'Habitación Económica para Estudiantes Universitarios'
+    }
+  ];
+}
